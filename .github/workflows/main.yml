@@ -4,11 +4,11 @@ on:
   push:
     branches:
       - staging
-      - master
+      - main
 
 jobs:
   deploy_production:
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -26,9 +26,9 @@ jobs:
             
             if [ -d ".git" ]; then
               git stash
-              git pull origin master
+              git pull origin main
             else
-              git clone -b master https://github.com/yonathanth/Workline-backend.git .
+              git clone -b main https://github.com/yonathanth/Workline-backend.git .
             fi
             
             npm install --force
