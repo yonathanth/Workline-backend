@@ -1,0 +1,53 @@
+name: Deploy Work Line API
+
+on:
+  push:
+    branches:
+      - staging
+      - master
+
+jobs:
+  deploy_production:
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Connect with VPS
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            mkdir -p apps/workline-api && cd apps/workline-api
+            
+            if [ -d ".git" ]; then
+              git stash
+              git pull origin master
+            else
+              git clone -b master https://github.com/yonathanth/Workline-backend.git .
+            fi
+            
+            npm install --force
+            
+            # Run Prisma migrations
+            npx prisma generate
+            npx prisma migrate deploy
+            
+            # Build the application
+            npm run build
+
+            pid=$(pm2 pid "workline-api" 2>/dev/null)
+            if [ -n "$pid" ]; then
+              echo "Reloading workline-api"
+              pm2 reload "workline-api"
+              pm2 save
+            else
+              echo "New application"
+              pm2 start npm --name "workline-api" -- start -- -p 24731
+              pm2 startup
+              pm2 save
+            fi
