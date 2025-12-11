@@ -1,5 +1,4 @@
 name: Deploy Workline API
-
 on:
   push:
     branches: [ main ]
